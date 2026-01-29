@@ -2,7 +2,7 @@
 Flask app cho hệ thống nén ảnh web
 """
 
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, url_for, send_from_directory
 import os
 import cv2
 import numpy as np
@@ -166,7 +166,8 @@ def compress_image():
             'time': jpeg_time,
             'psnr': calculate_psnr(img, jpeg_decompressed),
             'ssim': calculate_ssim(img, jpeg_decompressed),
-            'image': 'data:image/jpeg;base64,' + image_to_base64(jpeg_path)
+            'image': 'data:image/jpeg;base64,' + image_to_base64(jpeg_path),
+            'download': url_for('download_result', filename=os.path.basename(jpeg_path))
         }
         
         # PNG
@@ -183,7 +184,8 @@ def compress_image():
             'time': png_time,
             'psnr': calculate_psnr(img, png_decompressed),
             'ssim': calculate_ssim(img, png_decompressed),
-            'image': 'data:image/png;base64,' + image_to_base64(png_path)
+            'image': 'data:image/png;base64,' + image_to_base64(png_path),
+            'download': url_for('download_result', filename=os.path.basename(png_path))
         }
         
         # WebP Lossy
@@ -202,7 +204,8 @@ def compress_image():
                 'time': webp_lossy_time,
                 'psnr': calculate_psnr(img, webp_lossy_decompressed),
                 'ssim': calculate_ssim(img, webp_lossy_decompressed),
-                'image': 'data:image/webp;base64,' + image_to_base64(webp_lossy_path)
+                'image': 'data:image/webp;base64,' + image_to_base64(webp_lossy_path),
+                'download': url_for('download_result', filename=os.path.basename(webp_lossy_path))
             }
         except Exception as e:
             results['webp_lossy'] = {'error': str(e)}
@@ -223,7 +226,8 @@ def compress_image():
                 'time': webp_lossless_time,
                 'psnr': calculate_psnr(img, webp_lossless_decompressed),
                 'ssim': calculate_ssim(img, webp_lossless_decompressed),
-                'image': 'data:image/webp;base64,' + image_to_base64(webp_lossless_path)
+                'image': 'data:image/webp;base64,' + image_to_base64(webp_lossless_path),
+                'download': url_for('download_result', filename=os.path.basename(webp_lossless_path))
             }
         except Exception as e:
             results['webp_lossless'] = {'error': str(e)}
@@ -259,6 +263,19 @@ def get_recommendations():
         }
     }
     return jsonify(recommendations)
+
+
+@app.route('/download/<path:filename>')
+def download_result(filename):
+    """Serve a compressed result file as an attachment."""
+    # Use secure filename to avoid path traversal
+    safe_name = secure_filename(filename)
+    file_path = os.path.join(app.config['RESULTS_FOLDER'], safe_name)
+    if not os.path.exists(file_path):
+        return jsonify({'error': 'File not found'}), 404
+
+    # send_from_directory is safer and sets appropriate headers
+    return send_from_directory(app.config['RESULTS_FOLDER'], safe_name, as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
