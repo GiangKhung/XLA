@@ -44,6 +44,12 @@ advanced_results/
 *.db
 *.sqlite
 .env
+test_image.jpg
+*.jpg
+*.png
+*.webp
+*.gif
+*.bmp
 
 # OS
 Thumbs.db
