@@ -142,6 +142,9 @@ function displayResults(data, file) {
                         <span>SSIM:</span>
                         <strong>${result.ssim.toFixed(4)}</strong>
                     </div>
+                    <div class="metric">
+                        <a class="btn btn-download" href="${result.download}" target="_blank" rel="noopener">Tải xuống</a>
+                    </div>
                 </div>
             `;
             comparisonGrid.appendChild(item);
