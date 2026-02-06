@@ -13,6 +13,8 @@ RUN apt-get update && apt-get install -y \
     libsm6 \
     libxext6 \
     libxrender-dev \
+    libgl1 \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
@@ -30,5 +32,6 @@ RUN mkdir -p uploads compression_results advanced_results
 # Expose port
 EXPOSE 5000
 
-# Run Flask app
-CMD ["python", "app.py"]
+# Run Flask app with proper encoding
+ENV PYTHONIOENCODING=utf-8
+CMD ["python", "-u", "app.py"]

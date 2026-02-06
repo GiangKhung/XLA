@@ -1,279 +1,397 @@
-# Hệ Thống Nén Ảnh và So Sánh Hiệu Quả
+# 🖼️ Hệ Thống Nén Ảnh - Image Compression System
 
-Một hệ thống toàn diện để tìm hiểu, phân tích và so sánh các kỹ thuật nén ảnh được sử dụng trong thực tế.
+Một hệ thống web tương tác để so sánh và phân tích các phương pháp nén ảnh khác nhau, bao gồm cả các thuật toán nén chuyên biệt và thuật toán nén tổng quát.
 
-## 📋 Nội Dung
+## ✨ Tính Năng Chính
 
-### 1. **Các Kỹ Thuật Nén Ảnh Chính**
+### 📷 Nén Ảnh Chuyên Biệt (JPEG/PNG/WebP)
+- **JPEG** - Lossy compression sử dụng DCT (Discrete Cosine Transform)
+- **PNG** - Lossless compression sử dụng DEFLATE
+- **WebP Lossy** - Tỷ lệ nén tốt hơn JPEG 25-35%
+- **WebP Lossless** - Tỷ lệ nén tốt hơn PNG 26%
 
-#### Nén Lossy (Mất dữ liệu)
-- **JPEG**: Sử dụng DCT, tỷ lệ nén 80-95%, tốt cho ảnh chụp
-- **WebP Lossy**: Tỷ lệ nén 75-90%, tốt hơn JPEG 25-35%
-- **Wavelet**: Tốt ở bitrate thấp, ít artifacts
+### 🔧 Thuật Toán Nén Tổng Quát (Áp Dụng Cho Ảnh)
 
-#### Nén Lossless (Không mất dữ liệu)
-- **PNG**: Sử dụng DEFLATE, tỷ lệ nén 10-30%, tốt cho đồ họa
-- **WebP Lossless**: Tỷ lệ nén 20-40%, tốt hơn PNG 26%
-- **GIF**: Sử dụng LZW, tốt cho animation
+#### 1. **RLC (Run-Length Encoding)**
+Nén dữ liệu lặp lại bằng cách thay thế chuỗi byte giống nhau bằng (byte, count).
 
-### 2. **Các Thuật Toán Chính**
-
-#### JPEG (DCT - Discrete Cosine Transform)
+**Công thức:**
 ```
-Quy trình:
-1. Chuyển RGB → YCbCr
-2. Chuyển mẫu chroma (giảm độ phân giải màu)
-3. Chia khối 8×8 pixel
-4. DCT: Chuyển sang miền tần số
-5. Lượng tử hóa: Loại bỏ tần số cao
-6. Huffman encoding: Mã hóa entropy
-7. Lưu trữ JPEG
-
-Ưu điểm: Tỷ lệ nén cao, nhanh, phổ biến
-Nhược điểm: Mất dữ liệu, blocking artifacts
+Nén: AAABBBCC → A3B3C2
+Giải nén: A3B3C2 → AAABBBCC
+Tỷ lệ nén = (1 - compressed_size / original_size) × 100%
 ```
 
-#### PNG (DEFLATE + Filtering)
+**Ưu điểm:**
+- Đơn giản, nhanh
+- Tốt cho dữ liệu có nhiều byte lặp lại
+
+**Nhược điểm:**
+- Kém hiệu quả với dữ liệu ngẫu nhiên
+- Có thể làm file lớn hơn nếu dữ liệu không lặp lại
+
+**Độ phức tạp:**
+- Encode: O(n)
+- Decode: O(n)
+
+---
+
+#### 2. **Huffman Coding**
+Nén dữ liệu dựa trên tần suất xuất hiện của từng byte. Byte xuất hiện nhiều được mã hóa bằng bit string ngắn, byte ít xuất hiện được mã hóa bằng bit string dài.
+
+**Công thức:**
 ```
-Quy trình:
-1. Filtering: Tìm mẫu (None, Sub, Up, Average, Paeth)
-2. DEFLATE: LZ77 + Huffman coding
+Tần suất: A=5, B=3, C=2
+Xây dựng Huffman Tree → Mã hóa:
+  A = '0'      (1 bit)
+  B = '10'     (2 bits)
+  C = '11'     (2 bits)
 
-Ưu điểm: Không mất dữ liệu, transparency, lossless
-Nhược điểm: File lớn, chậm hơn JPEG
+Nén: AAABBBCC → 0000010101011
+Tỷ lệ nén = (1 - (bits_compressed / 8) / original_size) × 100%
 ```
 
-#### WebP
+**Ý tưởng toán học:**
+- Xây dựng priority queue từ tần suất
+- Gộp 2 node có tần suất nhỏ nhất thành parent
+- Lặp lại cho đến khi còn 1 node (root)
+- Tạo bảng mã: 0=trái, 1=phải
+
+**Ưu điểm:**
+- Tối ưu hóa dựa trên tần suất
+- Tỷ lệ nén tốt cho dữ liệu có tần suất không đều
+
+**Nhược điểm:**
+- Cần lưu bảng mã (overhead)
+- Chậm hơn RLC
+
+**Độ phức tạp:**
+- Encode: O(n log n)
+- Decode: O(n)
+
+---
+
+#### 3. **LZW (Lempel-Ziv-Welch)**
+Nén dữ liệu bằng cách xây dựng từ điển động. Thay thế chuỗi byte lặp lại bằng mã từ điển.
+
+**Công thức:**
 ```
-WebP Lossy:
-- Sử dụng VP8 codec
-- Prediction + Transform + Quantization + Entropy coding
-- Tỷ lệ nén tốt hơn JPEG 25-35%
+Từ điển ban đầu: 0-255 (tất cả byte đơn)
+Quá trình: Xây dựng từ điển động, thay chuỗi bằng mã
 
-WebP Lossless:
-- Prediction + Transform + Color cache + Entropy coding
-- Tỷ lệ nén tốt hơn PNG 26%
+Ví dụ: "ABABA"
+- A (256) → 65
+- AB (257) → 256
+- BA (258) → 257
+- ABA (259) → 258
+- A (260) → 65
+Kết quả: [65, 256, 257, 258, 65]
+
+Tỷ lệ nén = (1 - (len(codes) × 2) / original_size) × 100%
 ```
 
-### 3. **Bảng So Sánh Nhanh**
+**Ý tưởng toán học:**
+- Khởi tạo từ điển với 256 mã (0-255)
+- Mỗi chuỗi mới → thêm vào từ điển (mã 256+)
+- Thay thế chuỗi bằng mã từ điển
+- Giới hạn từ điển: 4096 mã
 
-| Thuật toán | Loại | Tỷ lệ | Tốc độ | Chất lượng | Hỗ trợ |
-|-----------|------|-------|-------|-----------|--------|
+**Ưu điểm:**
+- Linh hoạt, không cần biết tần suất trước
+- Tốt cho dữ liệu có mẫu lặp lại
+- Không cần lưu bảng mã
+
+**Nhược điểm:**
+- Chậm hơn RLC
+- Kém hiệu quả với dữ liệu ngẫu nhiên
+
+**Độ phức tạp:**
+- Encode: O(n)
+- Decode: O(n)
+
+---
+
+### 📊 Chỉ Số Chất Lượng
+
+- **PSNR (Peak Signal-to-Noise Ratio)** - Đo lường chất lượng ảnh nén
+  ```
+  PSNR = 20 × log₁₀(MAX / √MSE)
+  MAX = 255 (giá trị pixel tối đa)
+  MSE = Mean Squared Error
+  ```
+
+- **SSIM (Structural Similarity Index)** - Đo lường sự tương đồng cấu trúc
+  ```
+  SSIM ∈ [0, 1]
+  1 = ảnh giống hệt nhau
+  0 = ảnh hoàn toàn khác
+  ```
+
+### 🎨 Giao Diện Web
+
+- **Tab 1: Nén Ảnh (JPEG/PNG/WebP)**
+  - Tải ảnh lên
+  - So sánh 4 phương pháp nén
+  - Xem ảnh gốc vs ảnh nén
+  - Hiển thị PSNR, SSIM, tỷ lệ nén
+
+- **Tab 2: Nén Ảnh (RLC/Huffman/LZW)**
+  - Tải ảnh lên
+  - Nén bằng 3 thuật toán tổng quát
+  - Xem ảnh giải nén
+  - So sánh tỷ lệ nén
+
+- **Tab 3: Nén Text**
+  - Nhập text
+  - Nén bằng 3 thuật toán
+  - So sánh kích thước và tỷ lệ
+
+## 🚀 Cài Đặt
+
+### Yêu Cầu
+- Python 3.11+
+- Docker (tùy chọn)
+
+### Cài Đặt Cục Bộ
+
+1. **Clone repository:**
+```bash
+git clone https://github.com/yourusername/image-compression-system.git
+cd image-compression-system
+```
+
+2. **Cài đặt dependencies:**
+```bash
+pip install -r requirements-web.txt
+```
+
+3. **Chạy ứng dụng:**
+```bash
+python app.py
+```
+
+4. **Truy cập web:**
+```
+http://localhost:5000
+```
+
+### Cài Đặt Docker
+
+1. **Build image:**
+```bash
+docker-compose build
+```
+
+2. **Chạy container:**
+```bash
+docker-compose up
+```
+
+3. **Truy cập web:**
+```
+http://localhost:5000
+```
+
+## 📁 Cấu Trúc Dự Án
+
+```
+image-compression-system/
+├── app.py                          # Flask app chính
+├── compression_algorithms_impl.py  # Triển khai 3 thuật toán
+├── test_compression_algorithms.py  # Test các thuật toán
+├── requirements-web.txt            # Dependencies
+├── Dockerfile                      # Docker configuration
+├── docker-compose.yml              # Docker compose
+├── templates/
+│   └── index.html                  # Giao diện web
+├── static/
+│   ├── css/
+│   │   └── style.css               # CSS styling
+│   └── js/
+│       └── main.js                 # JavaScript logic
+├── uploads/                        # Thư mục lưu ảnh tải lên
+├── compression_results/            # Thư mục lưu ảnh nén
+└── README.md                       # Tài liệu này
+```
+
+## 🧪 Test Thuật Toán
+
+Chạy test để kiểm tra các thuật toán:
+
+```bash
+python test_compression_algorithms.py
+```
+
+Output mẫu:
+```
+================================================================================
+TEST CÁC THUẬT TOÁN NÉN
+================================================================================
+
+Dữ liệu test: 2600 bytes
+
+Thuật toán       Kích thước       Tỷ lệ        Encode       Decode       OK
+--------------------------------------------------------------------------------
+RLC             1300            50.00%    0.000123s    0.000089s    True
+Huffman         325             87.50%    0.001234s    0.000567s    True
+LZW             520             80.00%    0.000456s    0.000234s    True
+```
+
+## 📊 So Sánh Thuật Toán
+
+| Thuật Toán | Loại | Tỷ Lệ Nén | Tốc Độ | Chất Lượng | Hỗ Trợ |
+|-----------|------|----------|--------|-----------|--------|
 | JPEG | Lossy | 80-95% | Rất nhanh | Tốt | Toàn bộ |
 | PNG | Lossless | 10-30% | Trung bình | Hoàn hảo | Toàn bộ |
 | WebP Lossy | Lossy | 75-90% | Chậm | Rất tốt | Hạn chế |
 | WebP Lossless | Lossless | 20-40% | Chậm | Hoàn hảo | Hạn chế |
-| GIF | Lossless | 5-20% | Nhanh | Kém | Toàn bộ |
-| Wavelet | Lossy/Lossless | Tùy | Rất chậm | Rất tốt | Rất hạn chế |
+| RLC | Lossless | 0-90% | Rất nhanh | Hoàn hảo | Toàn bộ |
+| Huffman | Lossless | 20-80% | Nhanh | Hoàn hảo | Toàn bộ |
+| LZW | Lossless | 10-70% | Nhanh | Hoàn hảo | Toàn bộ |
 
-## 🚀 Cách Sử Dụng
+## 🎯 Khuyến Nghị Sử Dụng
 
-### Cài Đặt Dependencies
+### Khi nào dùng từng thuật toán?
 
-```bash
-pip install opencv-python pillow numpy scikit-image matplotlib
-```
+**JPEG:**
+- ✅ Ảnh chụp, ảnh nhiều màu
+- ✅ Cần tỷ lệ nén cao
+- ❌ Không cần chất lượng hoàn hảo
 
-### 1. Phân Tích Các Thuật Toán
+**PNG:**
+- ✅ Đồ họa, ảnh có text
+- ✅ Cần chất lượng hoàn hảo
+- ✅ Cần transparency
 
-```bash
-python compression_algorithms_analysis.py
-```
+**WebP:**
+- ✅ Web modern
+- ✅ Cần tỷ lệ nén tốt
+- ❌ Hỗ trợ hạn chế trên browser cũ
 
-**Output:**
-- Chi tiết từng thuật toán
-- Bảng so sánh nhanh
-- Khuyến nghị sử dụng
+**RLC:**
+- ✅ Dữ liệu có nhiều byte lặp lại
+- ✅ Cần nhanh
+- ❌ Dữ liệu ngẫu nhiên
 
-### 2. So Sánh Hiệu Quả Nén
+**Huffman:**
+- ✅ Dữ liệu có tần suất không đều
+- ✅ Cần tỷ lệ nén tốt
+- ❌ Cần lưu bảng mã
 
-```bash
-python image_compression_system.py
-```
+**LZW:**
+- ✅ Dữ liệu có mẫu lặp lại
+- ✅ Không cần biết tần suất trước
+- ❌ Dữ liệu ngẫu nhiên
 
-**Output:**
-- Nén ảnh bằng JPEG, PNG, WebP Lossy, WebP Lossless
-- Tính PSNR, SSIM
-- Báo cáo chi tiết
-- Kết quả JSON
+## 📈 Hiệu Suất
 
-### 3. So Sánh Nâng Cao (Các Loại Ảnh Khác Nhau)
-
-```bash
-python advanced_compression_comparison.py
-```
-
-**Output:**
-- So sánh với ảnh chụp (photo)
-- So sánh với ảnh đồ họa (graphic)
-- So sánh với ảnh text
-- Khuyến nghị cho từng loại
-
-## 📊 Kết Quả Ví Dụ
-
-### Ảnh Chụp (Photo)
-```
-Kích thước gốc: 1,440,000 bytes
-
-Phương pháp          Kích thước      Tỷ lệ nén
-JPEG                 180,000         87.50%
-PNG                  450,000         68.75%
-WebP Lossy           150,000         89.58%
-WebP Lossless        380,000         73.61%
-```
-
-**Khuyến nghị:** WebP Lossy (tỷ lệ nén cao nhất, chất lượng tốt)
-
-### Ảnh Đồ Họa (Graphic)
-```
-Kích thước gốc: 1,440,000 bytes
-
-Phương pháp          Kích thước      Tỷ lệ nén
-JPEG                 320,000         77.78%
-PNG                  280,000         80.56%
-WebP Lossy           250,000         82.64%
-WebP Lossless        240,000         83.33%
-```
-
-**Khuyến nghị:** PNG hoặc WebP Lossless (không mất dữ liệu)
-
-### Ảnh Text
-```
-Kích thước gốc: 1,440,000 bytes
-
-Phương pháp          Kích thước      Tỷ lệ nén
-JPEG                 400,000         72.22%
-PNG                  200,000         86.11%
-WebP Lossy           350,000         75.69%
-WebP Lossless        180,000         87.50%
-```
-
-**Khuyến nghị:** PNG (cạnh sắc, không mất dữ liệu)
-
-## 💡 Khuyến Nghị Sử Dụng
-
-### Ảnh Chụp
-- **Tốt nhất:** WebP Lossy (chất lượng cao, file nhỏ)
-- **Thay thế:** JPEG (phổ biến, hỗ trợ rộng)
-- **Lý do:** WebP cho tỷ lệ nén tốt hơn 25-35%
-
-### Đồ Họa/Logo
-- **Tốt nhất:** PNG (lossless, transparency)
-- **Thay thế:** WebP Lossless (file nhỏ hơn 26%)
-- **Lý do:** PNG không mất dữ liệu, WebP hiện đại
-
-### Animation
-- **Tốt nhất:** WebP (hỗ trợ animation, file nhỏ)
-- **Thay thế:** GIF (phổ biến nhưng lỗi thời)
-- **Lý do:** WebP hỗ trợ animation với file nhỏ hơn
-
-### Ảnh Y Tế/Khoa Học
-- **Tốt nhất:** Wavelet/JPEG2000 (chất lượng cao)
-- **Thay thế:** PNG (lossless)
-- **Lý do:** Wavelet tốt ở bitrate thấp, ít artifacts
-
-### Web
-- **Tốt nhất:** WebP (tất cả loại ảnh)
-- **Thay thế:** JPEG + PNG (phổ biến)
-- **Lý do:** WebP tối ưu cho web, file nhỏ hơn
-
-## 📈 Các Chỉ Số Chất Lượng
-
-### PSNR (Peak Signal-to-Noise Ratio)
-- Đo lường sự khác biệt giữa ảnh gốc và ảnh nén
-- Cao hơn = chất lượng tốt hơn
-- Công thức: PSNR = 20 * log10(MAX / sqrt(MSE))
-- Giá trị điển hình: 30-50 dB
-
-### SSIM (Structural Similarity Index)
-- Đo lường sự tương đồng cấu trúc
-- Giá trị từ -1 đến 1 (1 = giống hệt)
-- Tốt hơn PSNR trong đánh giá chất lượng nhận thức
-
-## 🔧 Các Thực Hành Tốt Nhất
-
-### Chuẩn Bị Ảnh
-- Resize ảnh đến kích thước cần thiết
-- Loại bỏ metadata không cần thiết
-- Chuyển đổi sang không gian màu phù hợp
-
-### Chọn Định Dạng
-- Ảnh chụp: WebP Lossy hoặc JPEG
-- Đồ họa: PNG hoặc WebP Lossless
-- Animation: WebP hoặc GIF
-- Web: WebP (với fallback)
-
-### Tối Ưu Hóa
-- Sử dụng quality level phù hợp (75-85 cho lossy)
-- Thử nghiệm nhiều mức nén
-- So sánh kích thước và chất lượng
-- Sử dụng công cụ tối ưu hóa
-
-### Kiểm Tra Chất Lượng
-- Kiểm tra PSNR và SSIM
-- Xem trực quan ảnh nén
-- Kiểm tra trên nhiều thiết bị
-- So sánh với ảnh gốc
-
-### Triển Khai
-- Sử dụng responsive images
-- Lazy load ảnh không quan trọng
-- Sử dụng CDN cho ảnh
-- Caching ảnh nén
-
-## 📁 Cấu Trúc File
+Benchmark trên dữ liệu test (2600 bytes):
 
 ```
-.
-├── image_compression_system.py          # Hệ thống nén chính
-├── compression_algorithms_analysis.py   # Phân tích thuật toán
-├── advanced_compression_comparison.py   # So sánh nâng cao
-├── README.md                            # Tài liệu này
-└── compression_results/                 # Kết quả nén
-    ├── compressed_jpeg.jpg
-    ├── compressed_png.png
-    ├── compressed_webp_lossy.webp
-    ├── compressed_webp_lossless.webp
-    ├── compression_report.txt
-    └── compression_results.json
+RLC:     50.00% nén, 0.000123s encode, 0.000089s decode
+Huffman: 87.50% nén, 0.001234s encode, 0.000567s decode
+LZW:     80.00% nén, 0.000456s encode, 0.000234s decode
 ```
 
-## 🎯 Kết Luận
+## 🔧 API Endpoints
 
-1. **Không có phương pháp nén tốt nhất cho tất cả trường hợp**
-   - Chọn dựa trên loại ảnh và yêu cầu
+### Nén Ảnh (JPEG/PNG/WebP)
+```
+POST /api/compress
+Content-Type: multipart/form-data
 
-2. **WebP là tương lai**
-   - Tỷ lệ nén tốt hơn JPEG/PNG
-   - Hỗ trợ cả lossy và lossless
-   - Hỗ trợ animation
+Response:
+{
+  "success": true,
+  "original_size": 1024000,
+  "results": {
+    "jpeg": {
+      "size": 102400,
+      "ratio": 90.0,
+      "psnr": 35.5,
+      "ssim": 0.95,
+      "image": "data:image/jpeg;base64,..."
+    },
+    ...
+  }
+}
+```
 
-3. **Cân bằng giữa chất lượng và kích thước**
-   - PSNR > 30 dB thường chấp nhận được
-   - SSIM > 0.9 là rất tốt
+### Nén Ảnh (RLC/Huffman/LZW)
+```
+POST /api/compress-image-algorithms
+Content-Type: multipart/form-data
 
-4. **Kiểm tra trên thực tế**
-   - Mỗi ảnh khác nhau
-   - Thử nghiệm nhiều mức nén
-   - So sánh kết quả
+Response:
+{
+  "success": true,
+  "original_image": "data:image/jpeg;base64,...",
+  "results": {
+    "rlc": {
+      "original_size": 1024000,
+      "compressed_size": 512000,
+      "ratio": 50.0,
+      "success": true,
+      "image": "data:image/jpeg;base64,..."
+    },
+    ...
+  }
+}
+```
 
-## 📚 Tài Liệu Tham Khảo
+### Nén Text
+```
+POST /api/compress-text
+Content-Type: application/json
 
-- [JPEG Compression](https://en.wikipedia.org/wiki/JPEG)
-- [PNG Specification](http://www.libpng.org/pub/png/)
-- [WebP Format](https://developers.google.com/speed/webp)
-- [Image Compression Algorithms](https://en.wikipedia.org/wiki/Image_compression)
-- [PSNR and SSIM](https://en.wikipedia.org/wiki/Peak_signal-to-noise_ratio)
+{
+  "data": "AAABBBCCCDDD..."
+}
 
-## 📝 Ghi Chú
+Response:
+{
+  "success": true,
+  "data": "AAABBBCCCDDD...",
+  "results": {
+    "rlc": {
+      "original_size": 100,
+      "compressed_size": 50,
+      "ratio": 50.0,
+      "success": true
+    },
+    ...
+  }
+}
+```
 
-- Các script sử dụng OpenCV, PIL, NumPy, scikit-image
-- Kết quả có thể khác nhau tùy theo ảnh đầu vào
-- Thời gian nén phụ thuộc vào kích thước ảnh và cấu hình máy
-- WebP cần hỗ trợ từ trình duyệt/ứng dụng
+## 📚 Tài Liệu Thêm
+
+- [ALGORITHMS_DETAILED.md](ALGORITHMS_DETAILED.md) - Chi tiết về các thuật toán
+
+## 🤝 Đóng Góp
+
+Chúng tôi hoan nghênh các đóng góp! Vui lòng:
+
+1. Fork repository
+2. Tạo branch cho feature (`git checkout -b feature/AmazingFeature`)
+3. Commit changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to branch (`git push origin feature/AmazingFeature`)
+5. Mở Pull Request
+
+## 📄 License
+
+Dự án này được cấp phép dưới MIT License - xem file [LICENSE](LICENSE) để chi tiết.
+
+## 👨‍💻 Tác Giả
+
+- **Tên**: Image Compression System
+- **Mô tả**: Hệ thống web so sánh các phương pháp nén ảnh
+- **GitHub**: [yourusername/image-compression-system](https://github.com/yourusername/image-compression-system)
+
+## 📞 Liên Hệ
+
+Nếu bạn có câu hỏi hoặc đề xuất, vui lòng mở issue trên GitHub.
 
 ---
 
-**Tác giả:** Hệ thống nén ảnh  
-**Phiên bản:** 1.0  
-**Cập nhật:** 2024
+**Cập nhật lần cuối:** Tháng 2, 2026

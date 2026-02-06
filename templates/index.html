@@ -5,14 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hệ Thống Nén Ảnh - Image Compression System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar">
         <div class="container">
             <div class="navbar-brand">
-                <i class="fas fa-image"></i>
+                🖼️
                 <span>Image Compression System</span>
             </div>
             <ul class="nav-menu">
@@ -38,13 +37,22 @@
     <!-- Compress Section -->
     <section id="compress" class="compress-section">
         <div class="container">
-            <h2>Nén Ảnh</h2>
-            <p class="section-subtitle">Tải ảnh lên để so sánh các phương pháp nén</p>
+            <h2>Nén Ảnh & Dữ Liệu</h2>
+            <p class="section-subtitle">Tải ảnh lên hoặc nhập dữ liệu text để nén</p>
 
-            <div class="compress-container">
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-button active" onclick="switchTab('image-tab')">📷 Nén Ảnh (JPEG/PNG/WebP)</button>
+                <button class="tab-button" onclick="switchTab('image-algo-tab')">🖼️ Nén Ảnh (RLC/Huffman/LZW)</button>
+                <button class="tab-button" onclick="switchTab('text-tab')">📝 Nén Text</button>
+            </div>
+
+            <!-- Image Tab -->
+            <div id="image-tab" class="tab-content active">
+                <div class="compress-container">
                 <!-- Upload Area -->
                 <div class="upload-area" id="uploadArea">
-                    <i class="fas fa-cloud-upload-alt"></i>
+                    ??
                     <h3>Kéo ảnh vào đây hoặc nhấp để chọn</h3>
                     <p>Hỗ trợ: JPG, PNG, GIF, BMP (Tối đa 50MB)</p>
                     <input type="file" id="fileInput" accept="image/*" hidden>
@@ -107,6 +115,116 @@
                     <p>Đang nén ảnh...</p>
                 </div>
             </div>
+            </div>
+
+            <!-- Image Algorithms Tab -->
+            <div id="image-algo-tab" class="tab-content">
+                <div class="compress-container">
+                    <!-- Upload Area -->
+                    <div class="upload-area" id="uploadAreaAlgo">
+                        ??
+                        <h3>Kéo ảnh vào đây hoặc nhấp để chọn</h3>
+                        <p>Hỗ trợ: JPG, PNG, GIF, BMP (Tối đa 50MB)</p>
+                        <input type="file" id="fileInputAlgo" accept="image/*" hidden>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="resultsAlgo" class="results-container" style="display: none;">
+                        <div class="original-info">
+                            <h3>Thông Tin Ảnh Gốc</h3>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="label">Kích thước:</span>
+                                    <span class="value" id="originalSizeAlgo">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label">Định dạng:</span>
+                                    <span class="value" id="originalFormatAlgo">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Comparison Table -->
+                        <div class="comparison-table">
+                            <h3>Kết Quả So Sánh (RLC, Huffman, LZW)</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Phương Pháp</th>
+                                        <th>Kích Thước</th>
+                                        <th>Tỷ Lệ Nén</th>
+                                        <th>Trạng Thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultsTableAlgo">
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <button class="btn btn-secondary" onclick="resetCompressAlgo()">Nén Ảnh Khác</button>
+                    </div>
+
+                    <!-- Loading -->
+                    <div id="loadingAlgo" class="loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Đang nén ảnh...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Text Tab -->
+            <div id="text-tab" class="tab-content">
+                <div class="compress-container">
+                    <!-- Text Input -->
+                    <div class="text-input-area">
+                        <h3>Nhập Dữ Liệu Text</h3>
+                        <textarea id="textInput" placeholder="Nhập dữ liệu text để nén (ví dụ: AAABBBCCCDDD...)" rows="6"></textarea>
+                        <button class="btn btn-primary" onclick="compressText()">Nén Text</button>
+                    </div>
+
+                    <!-- Text Results -->
+                    <div id="textResults" class="results-container" style="display: none;">
+                        <div class="original-info">
+                            <h3>Thông Tin Dữ Liệu Gốc</h3>
+                            <div class="info-grid">
+                                <div class="info-item">
+                                    <span class="label">Kích thước:</span>
+                                    <span class="value" id="textOriginalSize">-</span>
+                                </div>
+                                <div class="info-item">
+                                    <span class="label">Ký tự:</span>
+                                    <span class="value" id="textCharCount">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Text Comparison Table -->
+                        <div class="comparison-table">
+                            <h3>Kết Quả So Sánh (RLC, Huffman, LZW)</h3>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Thuật Toán</th>
+                                        <th>Kích Thước</th>
+                                        <th>Tỷ Lệ Nén</th>
+                                        <th>Trạng Thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="textResultsTable">
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <button class="btn btn-secondary" onclick="resetTextCompress()">Nén Dữ Liệu Khác</button>
+                    </div>
+
+                    <!-- Loading -->
+                    <div id="textLoading" class="loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Đang nén dữ liệu...</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
@@ -146,14 +264,22 @@
         </div>
     </section>
 
+    <!-- Image Modal -->
+    <div id="imageModal" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="modalImage">
+        <div id="caption"></div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
             <p>&copy; 2024 Hệ Thống Nén Ảnh. Tất cả quyền được bảo lưu.</p>
-            <p>Được xây dựng với <i class="fas fa-heart"></i> bằng Flask, Python, HTML/CSS/JavaScript</p>
+            <p>Được xây dựng với ?? bằng Flask, Python, HTML/CSS/JavaScript</p>
         </div>
     </footer>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>
+
